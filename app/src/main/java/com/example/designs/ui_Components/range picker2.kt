@@ -1,175 +1,200 @@
 package com.example.designs.ui_Components
 
-
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.shadow.DropShadowPainter
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.designs.ui_Components.Constants.dates
+import kotlin.math.PI
+import kotlin.math.sin
 
 @Preview(showSystemUi = true)
 @Composable
 fun RangePicker2() {
 
+    val boxSize = 500f // Total height of the S-curve section of the notch path
+    val depth = -80f   // Depth of the notch (negative means to the left of center.x)
+    val color = Color(0xFF74AB2D)
+    val lineColor = listOf<Color>(Color.Transparent,Color(0xFF727770) , Color.Transparent)
+    val buttonColor = Color(0xFF192028)
     val textMeasurer = rememberTextMeasurer()
+    val textMeasurer2 = rememberTextMeasurer()
+    var currentSelectedOption by remember { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(Color.Black, Color(0xFF0A1A0A)),
-                    startX = 0f,
-                    endX = Float.POSITIVE_INFINITY
-                )
-            )
-    ) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.Black)){
 
+        // First Canvas (static elements - the notch path)
         Canvas(modifier = Modifier.fillMaxSize()) {
+            val path = Path().apply {
+                moveTo(center.x , 100f)
+                lineTo(center.x, center.y - (boxSize/2) )
+                cubicTo(x1= center.x  , y1 = center.y - (boxSize/2) + 90, x2 = center.x + depth , y2 = center.y - 90,x3 = center.x+depth , y3 = center.y )
+                cubicTo(x1= center.x + depth , y1 = center.y + 90, x2 = center.x , y2 = center.y + (boxSize/2) - 90,x3 = center.x , y3 = center.y + (boxSize/2))
+                lineTo(center.x, center.y + (boxSize/2) ) // Path segment D ends here, this lineTo is okay for clarity or if there were minor adjustments
+                lineTo(center.x, size.height)
+            }
 
-            val boxSize = 300f // Height of the curve area
-            val depth = 60f      // How much the curve extends outwards
-            val lineX = size.width * 0.25f // X position of the vertical line
-            val curveCenterY = center.y
+            val shadowPath = Path().apply {
 
-            // 1. --- The main timeline path ---
-            val timelinePath = Path().apply {
-                // Top vertical line
-                moveTo(lineX, 0f)
-                lineTo(lineX, curveCenterY - (boxSize / 2))
-
-                // Top part of the S-curve
-                cubicTo(
-                    x1 = lineX,
-                    y1 = curveCenterY - (boxSize / 2) + 70,
-                    x2 = lineX + depth,
-                    y2 = curveCenterY - 70,
-                    x3 = lineX + depth,
-                    y3 = curveCenterY
-                )
-
-                // Bottom part of the S-curve
-                cubicTo(
-                    x1 = lineX + depth,
-                    y1 = curveCenterY + 70,
-                    x2 = lineX,
-                    y2 = curveCenterY + (boxSize / 2) - 70,
-                    x3 = lineX,
-                    y3 = curveCenterY + (boxSize / 2)
-                )
-
-                // Bottom vertical line
-                lineTo(lineX, size.height)
+                moveTo(center.x, center.y - (boxSize/2) )
+                cubicTo(x1= center.x  , y1 = center.y - (boxSize/2) + 90, x2 = center.x + depth , y2 = center.y - 90,x3 = center.x+depth , y3 = center.y )
+                cubicTo(x1= center.x + depth , y1 = center.y + 90, x2 = center.x , y2 = center.y + (boxSize/2) - 90,x3 = center.x , y3 = center.y + (boxSize/2))
+                lineTo(center.x, center.y + boxSize ) // Path segment D ends here, this lineTo is okay for clarity or if there were minor adjustments
+                lineTo(center.x - boxSize ,center.y + boxSize )
+                lineTo(center.x - boxSize ,center.y - boxSize )
+                lineTo(center.x ,center.y - boxSize )
             }
 
             drawPath(
-                path = timelinePath,
-                color = Color.Green.copy(alpha = 0.4f),
-                style = Stroke(width = 3.dp.toPx())
+                path = shadowPath ,
+                brush = Brush.radialGradient(listOf<Color>( color.copy(alpha = .4f), Color.Transparent ))
+            )
+
+            drawPath(
+                path = path ,
+                brush = Brush.linearGradient(listOf<Color>(Color.Transparent , color.copy(alpha = .5f) , Color.Transparent)),
+                style = Stroke(width = 10f)
             )
 
 
-            // 2. --- The central circle button ---
-            val circleCenterX = lineX + depth
-            val circleRadius = 30.dp.toPx()
+            drawCircle( buttonColor , radius = 100f , center = Offset(x = center.x -(depth) + 60, center.y),)
+
 
             drawCircle(
-                color = Color.Black.copy(alpha = 0.5f),
-                radius = circleRadius,
-                center = Offset(x = circleCenterX, y = curveCenterY)
-            )
-            drawCircle(
-                color = Color.Gray.copy(alpha = 0.5f),
-                radius = circleRadius,
-                center = Offset(x = circleCenterX, y = curveCenterY),
-                style = Stroke(width = 1.dp.toPx())
-            )
-
-            // Arrow inside the circle
-            val arrowPath = Path().apply {
-                val arrowSize = 5.dp.toPx()
-                moveTo(circleCenterX, curveCenterY - arrowSize) // Top point
-                lineTo(circleCenterX - arrowSize, curveCenterY + arrowSize / 2) // Bottom-left
-                lineTo(circleCenterX + arrowSize, curveCenterY + arrowSize / 2) // Bottom-right
-                close()
-            }
-            drawPath(arrowPath, color = Color.White, style = Stroke(width = 1.5.dp.toPx()))
-
-
-            // 3. --- The date labels on the left ---
-            val dates = listOf("Sept 2024", "Oct 2024", "Nov 2024", "Dec 2024", "Jan 2025", "Feb 2025")
-            val totalHeightForDates = size.height * 0.7f
-            val startY = center.y - totalHeightForDates / 2
-            val spacing = totalHeightForDates / (dates.size - 1)
-
-            dates.forEachIndexed { index, date ->
-                val yPos = startY + index * spacing
-                val isNearCurve = yPos > curveCenterY - boxSize * 0.6f && yPos < curveCenterY + boxSize * 0.6f
-
-                drawText(
-                    textMeasurer = textMeasurer,
-                    text = date,
-                    style = TextStyle(
-                        color = if (isNearCurve) Color.White else Color.Gray,
-                        fontSize = 12.sp,
-                        fontWeight = if (isNearCurve) FontWeight.Bold else FontWeight.Normal,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                brush = Brush.radialGradient(
+                    colorStops = arrayOf(
+                        0.75f to Color.Transparent, // Shadow starts blending from 85% of the radius
+                        1f to Color.White.copy(alpha = 0.05f) // It's darkest at the very edge
                     ),
-                    topLeft = Offset(lineX - 120.dp.toPx(), yPos - (12.sp.toPx() / 2)),
-                    size = androidx.compose.ui.geometry.Size(100.dp.toPx(), 20.dp.toPx())
-                )
+                    center = Offset(x = center.x -(depth) + 60, center.y + 5),
+                    radius = 100f
+                ),
+                radius = 100f  ,
+                center = Offset(x = center.x -(depth) + 60, center.y),
+            )
+            drawText(
+                textMeasurer = textMeasurer2,
+                text = currentSelectedOption,
+                style = TextStyle(
+                    color = color,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.End,
+                ),
+                topLeft = Offset(x = center.x -(depth) + 70, center.y  ),
+                size = Size(100.dp.toPx(), 20.dp.toPx())
+            )
 
-                if (!isNearCurve) {
-                    // Draw tick mark
-                    drawLine(
-                        color = Color.Green.copy(alpha = 0.4f),
-                        start = Offset(lineX, yPos),
-                        end = Offset(lineX - 10.dp.toPx(), yPos),
-                        strokeWidth = 2.dp.toPx()
-                    )
+        }
+
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val boxSize = 200f
+            val containerHeight = constraints.maxHeight.toFloat()
+            var currentScroll by remember { mutableFloatStateOf(0f) }
+
+            val maxScroll = ((dates.size - 1) * boxSize) - (containerHeight / 2)
+
+            val scrollableState = remember {
+                ScrollableState { delta ->
+                    val newValue = (currentScroll + delta).coerceIn(0f, maxScroll)
+                    val consumed = newValue - currentScroll
+                    currentScroll = newValue
+                    consumed
                 }
             }
 
-            // 4. --- The main content on the right ---
-            val rightContentX = size.width * 0.55f
 
-            drawText(
-                textMeasurer = textMeasurer,
-                text = "Praha",
-                style = TextStyle(color = Color.White, fontSize = 18.sp),
-                topLeft = Offset(rightContentX, curveCenterY - 70.dp.toPx())
-            )
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollable(
+                        state = scrollableState,
+                        orientation = Orientation.Vertical
+                    )
+            ) {
+                val scrollOffset = currentScroll
 
-            drawText(
-                textMeasurer = textMeasurer,
-                text = "8,830",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
-                topLeft = Offset(rightContentX, curveCenterY - 40.dp.toPx())
-            )
+                fun calculateDynamicPathX(yOnCanvas: Float, i: Int): Float {
+                    val pathDefinitionCenterY = this.center.y
+                    val curveStartY = pathDefinitionCenterY - boxSize / 2
+                    val curveEndY = pathDefinitionCenterY + boxSize / 2
 
-            drawText(
-                textMeasurer = textMeasurer,
-                text = "Followers",
-                style = TextStyle(color = Color.Gray, fontSize = 16.sp),
-                topLeft = Offset(rightContentX, curveCenterY + 35.dp.toPx())
-            )
+                    if (yOnCanvas < curveStartY || yOnCanvas > curveEndY) {
+                        return this.center.x
+                    } else {
+                        if (yOnCanvas > curveStartY + 50 && yOnCanvas < curveEndY - 50) {
+                            currentSelectedOption = dates[i]
+                        }
+
+                        val t = (yOnCanvas - curveStartY) / boxSize
+                        val xOffset = depth * sin(t * PI.toFloat()).toFloat()
+                        return this.center.x + xOffset
+                    }
+                }
+
+                for (i in 1 until dates.size) {
+                    val yPositionOnCanvas = (i * boxSize) - scrollOffset
+                    val startX = calculateDynamicPathX(yPositionOnCanvas, i)
+                    val endX = startX - 150f
+
+                    drawLine(
+                        brush = Brush.linearGradient(lineColor),
+                        start = Offset(x = startX - 80, y = yPositionOnCanvas),
+                        end = Offset(x = endX, y = yPositionOnCanvas),
+                        strokeWidth = 7f,
+                        cap = StrokeCap.Round
+                    )
+
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = dates[i],
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End
+                        ),
+                        topLeft = Offset(startX - 480f, yPositionOnCanvas - 20f),
+                        size = Size(100.dp.toPx(), 20.dp.toPx())
+                    )
+                }
+            }
         }
+
     }
 }
