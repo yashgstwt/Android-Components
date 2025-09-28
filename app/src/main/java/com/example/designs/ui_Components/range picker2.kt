@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.designs.ui_Components.Constants.dates
 import kotlin.math.PI
+import kotlin.math.max
 import kotlin.math.sin
 
 @Preview(showSystemUi = true)
@@ -127,7 +128,11 @@ fun RangePicker2() {
             val containerHeight = constraints.maxHeight.toFloat()
             var currentScroll by remember { mutableFloatStateOf(0f) }
 
-            val maxScroll = ((dates.size - 1) * boxSize) - (containerHeight / 2)
+            val maxScroll = ((dates.size) * boxSize) + (containerHeight/12)
+
+//            containerHeight : 2400.0
+//            maxscroll : 3800.
+
 
             val scrollableState = remember {
                 ScrollableState { delta ->
@@ -168,7 +173,7 @@ fun RangePicker2() {
                 }
 
                 for (i in 1 until dates.size) {
-                    val yPositionOnCanvas = (i * boxSize) - scrollOffset
+                    val yPositionOnCanvas = (i * boxSize) - scrollOffset + containerHeight/2
                     val startX = calculateDynamicPathX(yPositionOnCanvas, i)
                     val endX = startX - 150f
 
