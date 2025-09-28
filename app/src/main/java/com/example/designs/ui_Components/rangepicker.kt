@@ -49,7 +49,6 @@ fun RangePicker() {
     val textMeasurer = rememberTextMeasurer()
     val textMeasurer2 = rememberTextMeasurer()
     var currentSelectedOption by remember { mutableStateOf("") }
-    var isScrollingEnabled by remember { mutableStateOf(true) } // Control scrolling
 
     Box(modifier = Modifier
         .fillMaxSize()

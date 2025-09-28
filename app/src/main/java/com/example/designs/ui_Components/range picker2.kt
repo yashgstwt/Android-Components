@@ -123,12 +123,13 @@ fun RangePicker2() {
 
         }
 
+        // line generation and scroll behaviour
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val boxSize = 200f
             val containerHeight = constraints.maxHeight.toFloat()
             var currentScroll by remember { mutableFloatStateOf(0f) }
 
-            val maxScroll = ((dates.size) * boxSize) + (containerHeight/12)
+            val maxScroll = ((dates.size) * boxSize) - boxSize*2
 
 //            containerHeight : 2400.0
 //            maxscroll : 3800.
@@ -173,7 +174,7 @@ fun RangePicker2() {
                 }
 
                 for (i in 1 until dates.size) {
-                    val yPositionOnCanvas = (i * boxSize) - scrollOffset + containerHeight/2
+                    val yPositionOnCanvas = (i * boxSize) - scrollOffset + containerHeight/2 - boxSize
                     val startX = calculateDynamicPathX(yPositionOnCanvas, i)
                     val endX = startX - 150f
 
